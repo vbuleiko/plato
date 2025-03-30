@@ -2,17 +2,19 @@ name: Send Plato Quote
 
 on:
   schedule:
-    - cron: '0 5 * * *'   # 08:00 МСК
+    - cron: '0 5 * * *'   # 08:00 МСК (UTC+3)
     - cron: '0 16 * * *'  # 19:00 МСК
-  workflow_dispatch:      # вручную
+  workflow_dispatch:       # Позволяет запускать вручную из GitHub
 
 jobs:
   send:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          persist-credentials: true
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -22,7 +24,15 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Run bot
+      - name: Run post_quote script
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
         run: python post_quote.py
+
+      - name: Commit used quotes
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add platon_quotes_used.json
+          git commit -m "update used quotes" || echo "No changes to commit"
+          git push
